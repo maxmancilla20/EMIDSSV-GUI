@@ -4,7 +4,7 @@ import PySimpleGUI as sg
 from PIL import Image
 import time
 
-port_name = "COM20"  # the name / address we found for our device
+"""port_name = "COM20"  # the name / address we found for our device
 
 ser = serial.Serial(
     port=port_name,
@@ -17,7 +17,79 @@ ser = serial.Serial(
 if ser.is_open:
     print(f'Conectado a {ser.portstr}')
 else:
-    print('Error al abrir el puerto')
+    print('Error al abrir el puerto')"""
+    
+# Definir los valores por defecto
+default_port_name = 'COM20'
+default_baudrate = 9600
+
+# Layout de la ventana de configuración inicial
+layout_config = [
+    [sg.Text('UART Configuration')],
+    [sg.Text('Port:'), sg.InputText(default_port_name, key='-PORT_NAME-')],
+    [sg.Text('Baudrate:'), sg.InputText(str(default_baudrate), key='-BAUDRATE-')],
+    [sg.Multiline(size=(70, 5), key='-OUTPUT CONFIG-',text_color="black", autoscroll=True, reroute_stdout=True, reroute_stderr=True, echo_stdout_stderr=True) ],
+    [sg.Button('Done'), sg.Button('See Ports', key = '-SEE PORTS-' )]
+]
+
+# Init Config Window
+window_config = sg.Window('EMIDSS GUI Uart Config', layout_config, background_color='white', finalize=True)
+
+# Bucle para la ventana de configuración inicial
+while True:
+    event, values = window_config.read()
+
+    if event == sg.WIN_CLOSED or event == 'Done':
+        break
+    
+    if event == sg.WIN_CLOSED or event == '-SEE PORTS-':
+        # List all comports
+        all_ports = list_ports.comports()
+        print(all_ports)
+
+        # Each entry in the `all_ports` list is a serial device. Check it's
+        # description and device attributes to learn more
+        first_serial_device = all_ports[0]
+        print(first_serial_device.device)  # the `port_name`
+        print(first_serial_device.description)  # perhaps helpful to know if this is your device
+        
+
+# Obtener los valores de configuración ingresados
+port_name = values['-PORT_NAME-']
+baudrate = int(values['-BAUDRATE-'])
+
+# Cerrar la ventana de configuración inicial
+window_config.close()
+
+# Configuración de la conexión serial
+"""ser = serial.Serial(
+    port=port_name,
+    baudrate=baudrate,
+    bytesize=serial.EIGHTBITS,
+    timeout=1
+)"""
+"""=========================================================="""
+# Función para verificar y manejar la conexión serial
+def check_serial_connection(port):
+    try:
+        ser = serial.Serial(
+            port=port,
+            baudrate=baudrate,
+            bytesize=serial.EIGHTBITS,
+            timeout=1
+        )
+        if not ser.is_open:
+            raise serial.SerialException('No se puede establecer la conexión serial.')
+        return ser
+    except serial.SerialException as e:
+        sg.popup_error(f'{str(e)}')
+        exit()
+
+# Verificar y obtener la conexión serial
+ser = check_serial_connection(port_name)  # Reemplaza 'COM10' con un puerto serial inválido para simular un error
+
+    
+"""==========================================================="""
 
 # Resize the image
 def resize_image(image_path, size, name):
