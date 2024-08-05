@@ -3,21 +3,8 @@ import serial.tools.list_ports as list_ports
 import PySimpleGUI as sg
 from PIL import Image
 import time
-
-"""port_name = "COM20"  # the name / address we found for our device
-
-ser = serial.Serial(
-    port=port_name,
-    baudrate=9600,
-    bytesize=serial.EIGHTBITS,  # set this to the amount of data you want to send
-    timeout=1
-    )
-
-# Verificar si el puerto está abierto
-if ser.is_open:
-    print(f'Conectado a {ser.portstr}')
-else:
-    print('Error al abrir el puerto')"""
+import os
+import runpy
     
 # Definir los valores por defecto
 default_port_name = 'COM20'
@@ -127,9 +114,11 @@ Write_Service_Text = sg.Text('Write Service.   Bytes', font=("Verdana Bold",12),
 Reset_Service_Text = sg.Text(' Reset Service', font=("Verdana Bold",12), text_color="black", size=(15, 1), background_color='white')
 Raw_Message_Text = sg.Text('Raw Message', font=("Verdana Bold",12), text_color="black", size=(12, 1), background_color='white')
 exit_button = sg.Button(image_filename='exit_png.png', key='-EXIT-')
-port_button = sg.Button('Get Ports', key='-GET PORTS-')
+port_button = sg.Button('Clear Output', key='-CLEAR OUTPUT-')
+graph_button = sg.Button('Graph Data', key='-GRAPH BUTTON-')
 Write_Input_1 = sg.Input(size=(2,1), key='-WRITE IN 1-')
 Write_Input_2 = sg.Input(size=(2,1), key='-WRITE IN 2-')
+info_button = sg.Button('Info', key='-INFO BUTTON-')
 
 # Layout of the window
 layout = [
@@ -137,9 +126,9 @@ layout = [
     [Read_Service_Text, Write_Service_Text, Reset_Service_Text],
     [combo_read, sg.Button(image_filename='send_png.png', border_width=None, key='-SEND READ-'), blank_space_1,  combo_write, Write_Input_1, Write_Input_2, sg.Button(image_filename='send_png.png', border_width=None, key='-SEND WRITE-'), blank_space_2,  combo_reset, sg.Button(image_filename='send_png.png', border_width=None, key='-SEND RESET-')],
     [sg.Text('________________________________________________________________________', font=("Verdana Bold",12), text_color="black", size=(72, 1), background_color='white')],
-    [Raw_Message_Text, sg.Input(size=(20,1), key='-COMMAND-'), sg.Button(image_filename='send_png.png', border_width=None, key='-SEND RAW-'), sg.Text('',background_color='white', size=(27,1)), port_button],
-    [sg.Multiline(size=(80, 20), key='-OUTPUT-',text_color="green", autoscroll=True, reroute_stdout=True, reroute_stderr=True, echo_stdout_stderr=True) ],
-    [exit_button]
+    [Raw_Message_Text, sg.Input(size=(20,1), key='-COMMAND-'), sg.Button(image_filename='send_png.png', border_width=None, key='-SEND RAW-'), sg.Text('',background_color='white', size=(27,1)), graph_button, port_button],
+    [sg.Multiline(size=(100, 20), key='-OUTPUT-',text_color="green", autoscroll=True, reroute_stdout=True, reroute_stderr=True, echo_stdout_stderr=True) ],
+    [info_button,sg.Text('',background_color='white', size=(80,1)), exit_button,]
 ]
 
 """====================================================== APPLICATION ============================================================="""
@@ -149,7 +138,7 @@ window = sg.Window("EMIDSS-V GUI", layout, background_color='white', finalize=Tr
 
 # Event loop
 while True:
-    event, values = window.read(timeout=100)
+    event, values = window.read(timeout=1)
     
     if event == sg.WIN_CLOSED or event == '-EXIT-':
         break
@@ -209,24 +198,26 @@ while True:
         ser.write((command).encode('utf-8'))
      
     """============= GET PORTS BUTTON ==============="""   
-    if event == '-GET PORTS-':
-        # List all comports
-        all_ports = list_ports.comports()
-        print(all_ports)
-
-        # Each entry in the `all_ports` list is a serial device. Check it's
-        # description and device attributes to learn more
-        first_serial_device = all_ports[0]
-        print(first_serial_device.device)  # the `port_name`
-        print(first_serial_device.description)  # perhaps helpful to know if this is your device
+    if event == '-CLEAR OUTPUT-':
+        window['-OUTPUT-'].update('')
     
     """============= READ UART FUNCTION ==============="""    
     if ser.in_waiting > 0:
         line = ser.readline().decode('utf-8').rstrip()
         #print(f'{line}')
         window['-OUTPUT-'].print(line, text_color='blue')
-        time.sleep(0.01)# Pausa para evitar una sobrecarga de la CPU
-    
+        time.sleep(0.005)# Pausa para evitar una sobrecarga de la CPU
+        
+    """ Create Graph"""
+    if event == '-GRAPH BUTTON-':
+        runpy.run_path('GraphicData.py')   
+        
+    if event == '-INFO BUTTON-':
+        sg.popup('How To Use this GUI.',
+                 '1. How to graph data:\n'
+                 '    Fill EMIDSS_V_Data.xlsx with the data obtained from\n' 
+                 '    the EMIDSS memory data.'
+                )
     
 """================================================================================================================================"""
           
