@@ -7,7 +7,7 @@ import os
 import runpy
     
 # Definir los valores por defecto
-default_port_name = 'COM20'
+default_port_name = 'COM7'
 default_baudrate = 9600
 
 # Layout de la ventana de configuración inicial
